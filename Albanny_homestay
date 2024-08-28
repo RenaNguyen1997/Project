@@ -1,0 +1,195 @@
+** Create a function to split the number and text **
+
+Function SplitTextAndNumber(cellValue As String) As Variant
+    Dim result(1) As String
+    Dim firstSpacePos As Long
+    
+    ' Find the position of the first space
+    firstSpacePos = InStr(cellValue, " ")
+    
+    If firstSpacePos > 0 Then
+        ' Split the text by the first space
+        result(0) = Left(cellValue, firstSpacePos - 1) ' Numerical part
+        result(1) = Mid(cellValue, firstSpacePos + 1) ' Text part
+    Else
+        ' If no space is found, return the entire text as the numerical part
+        result(0) = cellValue
+        result(1) = ""
+    End If
+    
+    SplitTextAndNumber = result
+End Function
+
+** Create method to assign type of bath room based on set conditions
+
+Public Sub DetermineBathType()
+    On Error GoTo ErrorHandler
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim propertyTypeCol As Long
+    Dim numBathroomsCol As Long
+    Dim bathTypeCol As Long
+    Dim propertyType As String
+    Dim numBathrooms As Double
+    Dim bathType As String
+    Dim headerRange As Range
+    Dim foundCell As Range
+
+    ' Set the worksheet to the active sheet
+    Set ws = ActiveSheet
+
+    ' Debugging: Ensure the worksheet is correctly set
+    If ws Is Nothing Then
+        MsgBox "Worksheet not found. Please ensure the worksheet is active."
+        Exit Sub
+    End If
+
+    ' Debugging: Check the sheet name
+    MsgBox "Working on sheet: " & ws.Name
+
+    ' Assume headers are in the first row
+    Set headerRange = ws.Rows(1)
+
+    ' Debugging: Ensure the header range is correctly set
+    If headerRange Is Nothing Then
+        MsgBox "Header range not found."
+        Exit Sub
+    End If
+
+    ' Find the column number for "property type"
+    Set foundCell = headerRange.Find(What:="room_type", LookIn:=xlValues, LookAt:=xlWhole)
+    If Not foundCell Is Nothing Then
+        propertyTypeCol = foundCell.Column
+    Else
+        MsgBox "Column 'property type' not found."
+        Exit Sub
+    End If
+
+    ' Find the column number for "number of bathrooms"
+    Set foundCell = headerRange.Find(What:="bathrooms", LookIn:=xlValues, LookAt:=xlWhole)
+    If Not foundCell Is Nothing Then
+        numBathroomsCol = foundCell.Column
+    Else
+        MsgBox "Column 'number of bathrooms' not found."
+        Exit Sub
+    End If
+
+    ' Determine the column for "bath type"
+    bathTypeCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column + 1
+
+    ' Ensure the column is within allowable range
+    If bathTypeCol > ws.Columns.Count Then
+        MsgBox "Column limit exceeded. Cannot add 'bath type' column."
+        Exit Sub
+    End If
+
+    ' Add header for the bath type column
+    ws.Cells(1, bathTypeCol).Value = "bath type"
+
+    ' Find the last row with data in the "property type" column
+    lastRow = ws.Cells(ws.Rows.Count, propertyTypeCol).End(xlUp).Row
+
+    ' Loop through each row, starting from row 2 (assuming row 1 has headers)
+    For i = 2 To lastRow
+        ' Read the property type and number of bathrooms
+        propertyType = ws.Cells(i, propertyTypeCol).Value
+        numBathrooms = ws.Cells(i, numBathroomsCol).Value
+
+        ' Determine the bath type based on the conditions
+        If propertyType = "Entire home/apt" Then
+            If numBathrooms < 2 Then
+                bathType = "private"
+            Else
+                bathType = "shared"
+            End If
+        ElseIf propertyType = "Private room" Then
+            bathType = "private"
+        Else
+            bathType = "unknown"
+        End If
+
+        ' Write the bath type to the determined column
+        ws.Cells(i, bathTypeCol).Value = bathType
+    Next i
+
+    MsgBox "Bath type determination completed."
+
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description
+End Sub
+
+
+** Finalized the bath type
+
+Public Sub bathtype()
+    Dim headerRange As Range
+    Dim foundOrigin As Range
+    Dim origin As Long
+    Dim foundAssign As Range
+    Dim assign As Long
+    Dim nextcell As Long
+    Dim assigntype As String
+    Dim origintype As String
+    Dim finaltype As String
+    
+    ' Assign the header
+    Set ws = ActiveSheet
+    Set headerRange = ws.Rows(1)
+    
+    If headerRange Is Nothing Then
+        MsgBox "Header range not found."
+        Exit Sub
+    End If
+    
+    
+    'Find the correct column for original bath type
+    Set foundOriginal = headerRange.Find(What:="bath_type", LookIn:=xlValues, LookAt:=xlWhole)
+    If Not foundOriginal Is Nothing Then
+        origin = foundOriginal.Column
+    Else
+        MsgBox "Column 'original bath type' not found."
+        Exit Sub
+    End If
+    
+    ' Find the correct column for assigned bath type
+    Set foundAssign = headerRange.Find(What:="bath type", LookIn:=xlValues, LookAt:=xlWhole)
+    If Not foundAssign Is Nothing Then
+        assign = foundAssign.Column
+    Else
+        MsgBox "Column 'assigned bath type' not found."
+        Exit Sub
+    End If
+    
+        ' Find last row
+    lastRow = ws.Cells(ws.Rows.Count, origin).End(xlUp).Row
+    
+    ' Assign the column for finalized bath type
+    nextcell = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column + 1
+    ws.Cells(1, nextcell).Value = "finalized_bath_type"
+    
+    ' Assign the finalized bath type
+    For i = 2 To lastRow
+        assigntype = ws.Cells(i, assign).Value
+        origintype = ws.Cells(i, origin).Value
+        
+        If IsError(assigntype) Or IsError(origintype) Then
+            finaltype = "unknown"
+        Else
+            If origintype = "bath" Or origintype = "baths" Then
+                finaltype = assigntype
+            Else
+                finaltype = origintype
+            End If
+        End If
+        
+        ws.Cells(i, nextcell) = finaltype
+    Next i
+    
+    MsgBox "Bath type determination completed."
+        
+            
+End Sub
