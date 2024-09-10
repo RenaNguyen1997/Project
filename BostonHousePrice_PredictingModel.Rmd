@@ -1,0 +1,723 @@
+
+##Perform the transformation
+```{r}
+#Transform LandContour column
+LC.lvl <- as.numeric(house$LandContour == 'Lvl')
+LC.bnk <- as.numeric(house$LandContour == 'Bnk')
+LC.hls <- as.numeric(house$LandContour == 'HLS')
+LC.low <- as.numeric(house$LandContour == 'Low')
+
+#Transform Utilities column
+ut.allpub <- as.numeric(house$Utilities == 'AllPub')
+ut.NoSeWa <- as.numeric(house$Utilities == 'NoSeWa')
+
+#transform LotConfig
+lotcon.inside <-as.numeric(house$LotConfig == 'Inside')
+lotcon.corner <-as.numeric(house$LotConfig == 'Corner') 
+lotcon.fr2 <- as.numeric(house$LotConfig == 'FR2')
+lotcon.fr3 <-as.numeric(house$LotConfig == 'FR3')
+lotcon.CulDSac<-as.numeric(house$LotConfig == 'CulDSac') 
+
+
+#transform DwellClass
+dwellclass.1Fam <- as.numeric(house$DwellClass == '1Fam') 
+dwellclass.TwnhsE <- as.numeric(house$DwellClass == 'TwnhsE')
+dwellclass.Duplex <- as.numeric(house$DwellClass == 'Duplex')
+
+#transform garage type
+garageType.2type <- ifelse(is.na(house$GarageType), 0, as.numeric(house$GarageType == '2Types'))
+garageType.Attchd <- ifelse(is.na(house$GarageType), 0, as.numeric(house$GarageType == 'Attchd'))
+garageType.Basment <- ifelse(is.na(house$GarageType), 0, as.numeric(house$GarageType == 'Basment'))
+garageType.BuiltIn <- ifelse(is.na(house$GarageType), 0,as.numeric(house$GarageType == 'BuiltIn'))
+garageType.CarPort <- ifelse(is.na(house$GarageType), 0,as.numeric(house$GarageType == 'CarPort'))
+garageType.Detchd <- ifelse(is.na(house$GarageType), 0,as.numeric(house$GarageType == 'Detchd'))
+
+#transfrom paved drive
+pavedrive.paved <- as.numeric(house$PavedDrive == 'Y')
+pavedrive.partial <- as.numeric(house$PavedDrive == 'P')
+pavedrive.other <- as.numeric(house$PavedDrive == 'N')
+
+#transform LotShape
+lotshape.1 <- as.numeric(house$LotShape == 1)
+lotshape.2 <- as.numeric(house$LotShape == 2)
+lotshape.3 <- as.numeric(house$LotShape == 3)
+lotshape.4 <- as.numeric(house$LotShape == 4)
+
+#transform centralair
+centralair <- ifelse(house$CentralAir == 'Y', 1, 0)
+
+#transform Slope
+slope <- case_when(
+  house$Slope == 'Gtl' ~ 1,
+  house$Slope == 'Mod' ~ 2,
+  house$Slope == 'Sev' ~ 3,
+  TRUE ~ NA_real_
+)
+
+#transform ExteriorCondition
+exteriorcondition <- case_when(
+  house$ExteriorCondition == 'Po' ~ 1,
+  house$ExteriorCondition == 'Fa' ~ 2,
+  house$ExteriorCondition == 'TA' ~ 3,
+  house$ExteriorCondition == 'Gd' ~ 4,
+  house$ExteriorCondition == 'Ex' ~ 5,
+  TRUE ~ NA_real_
+)
+
+#transform BasementCondition
+basementcondition <- case_when(
+  house$BasementCondition == 'Po' ~ 1,
+  house$BasementCondition == 'Fa' ~ 2,
+  house$BasementCondition == 'TA' ~ 3,
+  house$BasementCondition == 'Gd' ~ 4,
+  house$BasementCondition == 'Ex' ~ 5,
+  TRUE ~ 0
+)
+basementcondition.nobasement <- as.numeric(house$BasementCondition == 'NB')
+
+sum(is.na(basementcondition.nobasement))
+
+#transform KitchenQuality
+kitchenquality <- case_when(
+  house$KitchenQuality == 'Po' ~ 1,
+  house$KitchenQuality == 'Fa' ~ 2,
+  house$KitchenQuality == 'TA' ~ 3,
+  house$KitchenQuality == 'Gd' ~ 4,
+  house$KitchenQuality == 'Ex' ~ 5,
+  TRUE ~ NA_real_
+)
+
+house_transform <- data.frame(LC.lvl, LC.bnk, LC.low, ut.allpub, ut.NoSeWa, lotcon.inside, lotcon.corner, lotcon.fr2, lotcon.fr3, lotcon.CulDSac, slope, dwellclass.1Fam, dwellclass.TwnhsE,dwellclass.Duplex, garageType.2type, garageType.Attchd, garageType.Basment, garageType.BuiltIn, garageType.CarPort, garageType.Detchd, pavedrive.paved, pavedrive.partial, pavedrive.other,lotshape.1,lotshape.2, lotshape.3, lotshape.4, exteriorcondition, basementcondition, basementcondition.nobasement, kitchenquality)
+
+
+
+house_clean <- house %>%
+  select(-LandContour, -Utilities, -LotConfig, -Slope, -DwellClass, -ExteriorCondition, -BasementCondition, -CentralAir, -KitchenQuality, -GarageType, -PavedDrive, -LotShape, -Id) %>%
+  cbind(house_transform)
+```
+##Understanding the data
+```{r}
+#Calculate for continous variables
+summary_mean <- house_clean %>% summarise(
+  Lotarea = round(mean(LotArea, na.rm = TRUE),2),
+  TotalBSF = round(mean(TotalBSF, na.rm = TRUE),2),
+  LivingArea = round(mean(LivingArea, na.rm = TRUE),2),
+  PoolArea = round(mean(PoolArea, na.rm = TRUE),2),
+  OpenPorchSF = round(mean(OpenPorchSF, na.rm = TRUE),2),
+  LowQualFinSF = round(mean(LowQualFinSF, na.rm = TRUE),2),
+  SalePrice = round(mean(SalePrice, na.rm = TRUE),2))
+
+summary_max <- house_clean %>% summarise(
+  Lotarea = round(max(LotArea, na.rm = TRUE),2),
+  TotalBSF = round(max(TotalBSF, na.rm = TRUE),2),
+  LivingArea = round(max(LivingArea, na.rm = TRUE),2),
+  PoolArea = round(max(PoolArea, na.rm = TRUE),2),
+  OpenPorchSF = round(max(OpenPorchSF, na.rm = TRUE),2),
+  LowQualFinSF = round(max(LowQualFinSF, na.rm = TRUE),2),
+  SalePrice = round(max(SalePrice, na.rm = TRUE),2))
+
+summary_min <- house_clean %>% summarise(
+  Lotarea = round(min(LotArea, na.rm = TRUE),2),
+  TotalBSF = round(min(TotalBSF, na.rm = TRUE),2),
+  LivingArea = round(min(LivingArea, na.rm = TRUE),2),
+  PoolArea = round(min(PoolArea, na.rm = TRUE),2),
+  OpenPorchSF = round(min(OpenPorchSF, na.rm = TRUE),2),
+  LowQualFinSF = round(min(LowQualFinSF, na.rm = TRUE),2),
+  SalePrice = round(min(SalePrice, na.rm = TRUE),2))
+
+summary_median <- house_clean %>% summarise(
+  Lotarea = round(median(LotArea, na.rm = TRUE),2),
+  TotalBSF = round(median(TotalBSF, na.rm = TRUE),2),
+  LivingArea = round(median(LivingArea, na.rm = TRUE),2),
+  PoolArea = round(median(PoolArea, na.rm = TRUE),2),
+  OpenPorchSF = round(median(OpenPorchSF, na.rm = TRUE),2),
+  LowQualFinSF = round(median(LowQualFinSF, na.rm = TRUE),2),
+  SalePrice = round(median(SalePrice, na.rm = TRUE),2))
+
+summary_sd <- house_clean %>% summarise(
+  Lotarea = round(sd(LotArea, na.rm = TRUE),2),
+  TotalBSF = round(sd(TotalBSF, na.rm = TRUE),2),
+  LivingArea = round(sd(LivingArea, na.rm = TRUE),2),
+  PoolArea = round(sd(PoolArea, na.rm = TRUE),2),
+  OpenPorchSF = round(sd(OpenPorchSF, na.rm = TRUE),2),
+  LowQualFinSF = round(sd(LowQualFinSF, na.rm = TRUE),2),
+  SalePrice = round(sd(SalePrice, na.rm = TRUE),2))
+
+measurement <- c('mean', 'max', 'min', 'median','sd')
+
+summary_continous <- rbind(summary_mean, summary_max,summary_min, summary_median,summary_sd )
+
+summary_continous <- cbind(measurement,summary_continous)
+View(summary_continous)
+
+##Count for nominal variable 
+summary_nominal_count <- house_transform %>% select(-exteriorcondition, -basementcondition, -kitchenquality, -slope ) %>%
+  colSums(na.rm = TRUE)
+summary_nominal_count
+
+##Count for ordinal variable
+exteriorcondition <- table(house_clean$exteriorcondition)
+basementcondition <- table(house_clean$basementcondition)
+kitchenquality <- table(house_clean$kitchenquality)
+slope <- table(house_clean$slope)
+OverallQuality <- table(house_clean$OverallQuality)
+OverallCondition <- table(house_clean$OverallCondition)
+MoSold <- table(house_clean$MoSold)
+
+print('exteriorcondition')
+exteriorcondition
+
+print('basementcondition')
+basementcondition
+
+print('kitchenquality')
+kitchenquality
+
+print('slope')
+slope
+
+print('OverallQuality')
+OverallQuality
+
+print('OverallCondition')
+OverallCondition
+
+print('MoSold')
+MoSold
+```
+
+##Data distribution
+```{r}
+#Draw histogram
+png("Q3_histogram.png", width = 800, height = 600)
+
+par(mfrow = c(2,4), mar = c(2, 2, 1, 1))
+hist(house_clean$LotArea, col= '#BEDC74', main = 'Lot Area', xlab = '')
+hist(house_clean$TotalBSF, col= '#BEDC74', main = 'Total BSF', xlab = '')
+hist(house_clean$LivingArea, col= '#BEDC74', main = 'Living Area', xlab = '')
+hist(house_clean$PoolArea, col= '#BEDC74', main = 'Pool Area', xlab = '')
+hist(house_clean$OpenPorchSF, col= '#BEDC74', main = 'Open Porch SF', xlab = '')
+hist(house_clean$LowQualFinSF, col= '#BEDC74', main = 'Low Qual Fin SF', xlab = '')
+hist(house_clean$SalePrice, col= '#BEDC74', main = 'Sale Price', xlab = '')
+
+
+dev.off()
+
+
+#Summary statistic
+continous <- house_clean %>% select('LotArea', 'TotalBSF', 'LivingArea', 'PoolArea', 'OpenPorchSF','LowQualFinSF', 'SalePrice')
+
+summary(continous)
+
+View(continous)
+
+#CV calculation
+summary_cv <- summary_sd/summary_mean
+View(summary_cv)
+
+```
+
+##Missing values
+```{r}
+#Identify missing values
+png("Q4_missingnessmap.png", width = 800, height = 600)
+missmap(house_clean, col=c('red','#BEDC74'),y.at= 1,y.labels='',legend=TRUE)
+dev.off()
+
+which(colSums(is.na(house_clean)) > 0)
+
+#Replace missing values with 0
+house_zero <- house_clean
+house_zero[is.na(house_zero)] <- 0
+
+
+#replace with mean
+house_mean <- house_clean
+
+house_mean$LivingArea[is.na(house_mean$LivingArea)] <- mean(house_mean$LivingArea, na.rm = TRUE)
+house_mean$YearBuilt[is.na(house_mean$YearBuilt)] <- mean(house_mean$YearBuilt, na.rm = TRUE)
+
+
+#Compare house_zero and house_mean with original
+
+png("Q4_livingarea.png", width = 800, height = 600)
+
+plot(density(house_clean$LivingArea, na.rm = TRUE), col = 'red', main = 'Living area original (Red) vs Transformed\nvia replacing with 0(violet) and with mean(green)')
+lines(density(house_mean$LivingArea), col = 'green')
+lines(density(house_zero$LivingArea), col = 'violet')
+dev.off()
+
+png("Q4_Yearbuilt.png", width = 800, height = 600)
+plot(density(house_clean$YearBuilt, na.rm = TRUE), col = 'red', main = 'Year built original (Red) vs Transformed\nvia replacing with 0(violet) and with mean(green)')
+lines(density(house_mean$YearBuilt), col = 'green')
+lines(density(house_zero$YearBuilt), col = 'violet')
+dev.off()
+
+#delete missing values
+house_delete <- house_clean[complete.cases(house_clean), ]
+
+png("Q4_saleprice.png", width = 800, height = 600)
+plot(density(house_clean$SalePrice, na.rm = TRUE), col = 'red', main = 'Sales price original (Red) vs Transformed\nvia  deleting NA (blue)')
+lines(density(house_delete$SalePrice), col = 'blue')
+
+png("Q4_livingarea_delete.png", width = 800, height = 600)
+plot(density(house_clean$LivingArea, na.rm = TRUE), col = 'red', main = 'Living area original (Red) vs Transformed\nvia  deleting NA (blue)')
+lines(density(house_delete$LivingArea), col = 'blue')
+
+png("Q4_yearbuilt_delete.png", width = 800, height = 600)
+plot(density(house_clean$YearBuilt, na.rm = TRUE), col = 'red', main = 'Year build original (Red) vs Transformed\nvia  deleting NA (blue)')
+lines(density(house_delete$YearBuilt), col = 'blue')
+
+dev.off()
+```
+
+
+##Dimension Reduction
+```{r}
+#Subset target variables
+
+house_variables <- subset(house_delete, select = -SalePrice)
+target <- house_delete$SalePrice
+
+#Visualize the correlation
+cor_matrix <- cor(house_variables)
+
+png("Q5_correlation.png", width = 800, height = 600)
+corrplot(cor_matrix, method = "color", tl.cex = 0.5)
+dev.off()
+
+#Identify variables with high correlation coefficient
+M <- data.matrix(house_variables)
+corrM <- cor(M)
+
+highlyCorrM <- findCorrelation(corrM, cutoff=0.5)
+names(house_variables)[highlyCorrM]
+
+#check variance of potential candidates for dimension reduction
+table(house_variables$slope)
+table(house_variables$lotcon.inside)
+table(house_variables$LC.lvl)
+
+#Proceed with dimension reduction
+
+house_reduce <- subset(house_variables, select = -c(ut.NoSeWa, TotalRmsAbvGrd))
+table(house_variables$PoolArea)
+```
+
+##Input variables distribution against SalePrice
+```{r}
+#Distribution of continous variables against SalePrice
+
+png("Q5_continousdistribution.png", width = 800, height = 600)
+continous_distribution <- house_delete %>% select('LotArea', 'TotalBSF', 'LivingArea', 'PoolArea', 'OpenPorchSF', 'SalePrice', 'YearBuilt', 'LowQualFinSF')
+continous_distribution_plot <- continous_distribution %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  ggplot(aes(x = Value, y = SalePrice)) +  # Plot Value against Sale_Price
+  facet_wrap(~ Variable, scales = "free") + # Create facets for each variable
+  geom_point(color = '#BEDC74', alpha = 0.5) +                # Scatter plot with some transparency
+  theme_minimal() +                        # Clean theme
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Scatter Plots of Continous variable vs Sale Price")
+continous_distribution_plot
+dev.off()
+
+#Distribution of discrete variables against SalePrice
+png("Q5_discretedistribution.png", width = 800, height = 600)
+discrete_distribution <- house_delete %>% select('FullBath', 'HalfBath', 'TotalRmsAbvGrd', 'BedroomAbvGr', 'KitchenAbvGr', 'Fireplaces', 'GarageCars', 'YrSold','SalePrice')
+discrete_distribution_plot <- discrete_distribution %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  ggplot(aes(x = Value, y = SalePrice)) +  
+  facet_wrap(~ Variable, scales = "free") + 
+  geom_jitter(color = '#BEDC74', width = 0.1, height = 0) +     
+  theme_minimal() +                      
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Jitter plot of Discrete Variables vs Sale Price")
+discrete_distribution_plot
+dev.off()
+
+#Distribution of Nominal variables against SalePrice
+png("Q5_nominal1.png", width = 800, height = 600)
+common_columns <- intersect(names(house_delete), names(summary_nominal_count))
+nominal_distribution <- house_delete %>% select(all_of(common_columns),SalePrice )
+nominal_distribution_plot1 <- nominal_distribution %>%
+  select(1:9,SalePrice ) %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  filter(Value == 1) %>%
+  ggplot(aes(x = as.factor(Value), y = SalePrice)) +  
+  facet_wrap(~ Variable, scales = "free") + 
+  geom_boxplot(fill = '#BEDC74') +     
+  theme_minimal() +                      
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Boxplots of Categorical Variables vs Sale Price")
+nominal_distribution_plot1
+dev.off()
+
+png("Q5_nominal2.png", width = 800, height = 600)
+nominal_distribution_plot2 <- nominal_distribution %>%
+  select(10:18,SalePrice ) %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  filter(Value == 1) %>%
+  ggplot(aes(x = as.factor(Value), y = SalePrice)) +  
+  facet_wrap(~ Variable, scales = "free") + 
+  geom_boxplot(fill = '#BEDC74') +     
+  theme_minimal() +                      
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Boxplots of Categorical Variables vs Sale Price")
+nominal_distribution_plot2
+dev.off()
+
+png("Q5_nominal3.png", width = 800, height = 600)
+nominal_distribution_plot3 <- nominal_distribution %>%
+  select(19:28,SalePrice ) %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  filter(Value == 1) %>%
+  ggplot(aes(x = as.factor(Value), y = SalePrice)) +  
+  facet_wrap(~ Variable, scales = "free") + 
+  geom_boxplot(fill = '#BEDC74') +     
+  theme_minimal() +                      
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Boxplots of Categorical Variables vs Sale Price")
+nominal_distribution_plot3
+dev.off()
+
+#Distribution of ordinal variable against SalePrice
+png("Q5_ordinal.png", width = 800, height = 600)
+ordinal_distribution <- house_delete %>% select('OverallQuality', 'OverallCondition', 'exteriorcondition', 'basementcondition', 'kitchenquality', 'slope', 'MoSold', 'SalePrice' )
+ordinal_distribution_plot <- ordinal_distribution %>%
+  keep(is.numeric) %>% 
+  gather(key = "Variable", value = "Value", -SalePrice) %>%
+  ggplot(aes(x = as.factor(Value), y = SalePrice)) +  
+  facet_wrap(~ Variable, scales = "free") + 
+  geom_boxplot(fill  = '#BEDC74') +     
+  theme_minimal() +                      
+  labs(x = "Variable Value", y = "Sale Price", 
+       title = "Boxplots of Categorical Variables vs Sale Price")
+ordinal_distribution_plot
+dev.off()
+
+
+```
+
+
+##Regression Modelling 
+```{r}
+
+#Merge target variable back to dataset
+house_reduce$SalePrice <- target
+
+# Assign formula
+formula = SalePrice  ~.
+
+
+#Data partition 
+smp_size <- floor(2/3 * nrow(house_reduce)) 
+
+set.seed(2)
+house_reduce_1 <- house_reduce[sample(nrow(house_reduce)), ]
+
+
+house1.train <- house_reduce_1[1:smp_size, ] 
+house1.test <- house_reduce_1[(smp_size+1):nrow(house_reduce_1), ]
+
+
+```
+
+###Data 1
+```{r}
+#Create model parameters
+model_1 <- lm(formula = formula, data = house1.train)
+
+#Forming formula
+formula_1 <- as.formula(
+ paste0("y ~ ", round(coefficients(model_1)[1],2), " + ", 
+ paste(sprintf("%.2f * %s",coefficients(model_1)[-1],
+ names(coefficients(model_1)[-1])), 
+ collapse=" + ")
+ )
+)
+
+formula_1
+
+summary(model_1)
+
+#Evaluate the model
+house1.train$predicted.saleprice <- predict(model_1, house1.train)
+house1.test$predicted.saleprice <- predict(model_1, house1.test)
+
+pl1 <-house1.test %>%
+ ggplot(aes(SalePrice,predicted.saleprice)) +
+ geom_point(alpha=0.5) +
+ stat_smooth(aes(colour='red')) +
+ xlab('Actual value') +
+ ylab('Predicted value')+
+ ggtitle('Regression modelling 1')
+ theme_bw()
+ggplotly(pl1)
+
+r_squared_1 <- summary(model_1)$r.squared
+
+error_1 <- house1.test$SalePrice-house1.test$predicted.saleprice
+rmse_1 <- sqrt(mean(error_1^2))
+
+round(r_squared_1,2)
+rmse_1
+
+dataset1 <- c(round(r_squared_1,2), round(rmse_1,2))
+
+table(house_reduce$lotcon.CulDSac)
+```
+
+###Data 2
+```{r}
+house_reduce_2 <- subset(house_reduce_1, select= -c(ut.allpub,lotcon.inside, pavedrive.paved, lotshape.4))
+
+
+house2.train <- house_reduce_2[1:smp_size, ] 
+house2.test <- house_reduce_2[(smp_size+1):nrow(house_reduce_2), ]
+
+model_2 <- lm(formula = formula, data = house2.train)
+
+formula_2 <- as.formula(
+ paste0("y ~ ", round(coefficients(model_2)[1],2), " + ", 
+ paste(sprintf("%.2f * %s",coefficients(model_2)[-1],
+ names(coefficients(model_2)[-1])), 
+ collapse=" + ")
+ )
+)
+
+formula_2
+
+summary(model_2)
+
+house2.train$predicted.saleprice <- predict(model_2, house2.train)
+house2.test$predicted.saleprice <- predict(model_2, house2.test)
+
+pl2 <-house2.test %>%
+ ggplot(aes(SalePrice,predicted.saleprice)) +
+ geom_point(alpha=0.5) +
+ stat_smooth(aes(colour='red')) +
+ xlab('Actual value') +
+ ylab('Predicted value')+
+ ggtitle('Regression modelling 2')+
+ theme_bw()
+ggplotly(pl2)
+
+r_squared_2 <- summary(model_2)$r.squared
+
+error_2 <- house2.test$SalePrice-house2.test$predicted.saleprice
+rmse_2 <- sqrt(mean(error_2^2))
+
+r_squared_2
+rmse_2
+
+dataset2 <- c(round(r_squared_2,2), round(rmse_2,2))
+```
+
+###Data 3
+```{r}
+house_reduce_3 = subset(house_reduce_1, select= -c(ut.allpub, lotcon.inside, pavedrive.paved, lotshape.4, lotcon.CulDSac, pavedrive.other))
+house_reduce_3
+
+
+house3.train <- house_reduce_3[1:smp_size, ] 
+house3.test <- house_reduce_3[(smp_size+1):nrow(house_reduce_3), ]
+
+model_3 <- lm(formula = formula, data = house3.train)
+
+formula_3 <- as.formula(
+ paste0("y ~ ", round(coefficients(model_3)[1],2), " + ", 
+ paste(sprintf("%.2f * %s",coefficients(model_3)[-1],
+ names(coefficients(model_3)[-1])), 
+ collapse=" + ")
+ )
+)
+formula_3
+
+summary(model_3)
+
+house3.train$predicted.saleprice <- predict(model_3, house3.train)
+house3.test$predicted.saleprice <- predict(model_3, house3.test)
+
+pl3 <-house3.test %>%
+ ggplot(aes(SalePrice,predicted.saleprice)) +
+ geom_point(alpha=0.5) +
+ stat_smooth(aes(colour='red')) +
+ xlab('Actual value') +
+ ylab('Predicted value')+
+ ggtitle('Regression modelling 3')
+ theme_bw()
+ggplotly(pl3)
+
+r_squared_3 <- summary(model_3)$r.squared
+
+error_3 <- house3.test$SalePrice-house3.test$predicted.saleprice
+rmse_3 <- sqrt(mean(error_3^2))
+
+r_squared_3
+rmse_3
+
+dataset3 <- c(round(r_squared_3,2), round(rmse_3,2))
+```
+###Data 4
+```{r}
+house_reduce_4 = subset(house_reduce_1, select= -c(ut.allpub, lotcon.inside, pavedrive.paved, lotshape.4, lotcon.CulDSac, pavedrive.other, LC.lvl))
+
+
+house4.train <- house_reduce_4[1:smp_size, ] 
+house4.test <- house_reduce_4[(smp_size+1):nrow(house_reduce_4), ]
+
+model_4 <- lm(formula = formula, data = house4.train)
+
+summary(model_4)
+
+house4.train$predicted.saleprice <- predict(model_4, house4.train)
+house4.test$predicted.saleprice <- predict(model_4, house4.test)
+
+pl4 <-house4.test %>%
+ ggplot(aes(SalePrice,predicted.saleprice)) +
+ geom_point(alpha=0.5) +
+ stat_smooth(aes(colour='red')) +
+ xlab('Actual value') +
+ ylab('Predicted value')+
+ ggtitle('Regression modelling 4')
+ theme_bw()
+ggplotly(pl4)
+
+r_squared_4 <- summary(model_4)$r.squared
+
+metrics_4 <- postResample(pred = house4.test$predicted.saleprice, obs = house4.test$SalePrice)
+metrics_4
+
+error_4 <- house4.test$SalePrice-house4.test$predicted.saleprice
+rmse_4 <- sqrt(mean(error_4^2))
+
+r_squared_4
+rmse_4
+
+dataset4 <- c(round(r_squared_4,2), round(rmse_4,2))
+```
+
+
+###table of evaluation metrics 
+```{r}
+metric_name <- c('R_squared', 'RMSE')
+
+metric_table <- rbind(metric_name, dataset1, dataset2, dataset3, dataset4)
+View(metric_table)
+
+```
+
+##Decision tree
+###Initial decision tree
+```{r}
+#Data configuration
+smp_size.dt <- floor((2/3) *nrow(house_clean))
+
+set.seed(3)
+house.dt <- house_clean[sample(nrow(house_clean)), ]
+
+house.dt$SalePrice <- house.dt$SalePrice/1000
+
+#Create test and train dataset
+house.dt_train <- house.dt[1:smp_size.dt, ]
+house.dt_test <- house.dt[(smp_size.dt+1): nrow(house.dt), ]
+
+#Set target and input variable
+formula_dt = SalePrice~.
+
+#Build and visualize decision tree
+dtree <- rpart(formula_dt, data=house.dt_train, method="anova")
+
+dtree$variable.importance
+
+png("PartC_Decisiontree_initial.png", width = 800, height = 600)
+rpart.plot(dtree, type = 4, fallen.leaves = FALSE, main = "Initial decision tree")
+dev.off()
+
+summary(dtree)
+
+predicted.saleprice.dt <- predict(dtree, house.dt_test)
+
+r_squred.dt <- postResample(pred = predicted.saleprice.dt*1000, obs = house.dt_test$SalePrice*1000)
+
+error.dt <- (house.dt_test$SalePrice - predicted.saleprice.dt)*1000
+rmse.dt <- sqrt(mean(error.dt^2))
+rmse.dt
+r_squred.dt
+
+```
+
+###Decision with best CP value
+```{r}
+printcp(dtree)
+dtree$cptable[which.min(dtree$cptable[,"xerror"]),"CP"]
+
+pruned_dtree <- prune(dtree, cp = 0.01) 
+
+png("PartC_Decisiontree_bestCP.png", width = 800, height = 600)
+rpart.plot(pruned_dtree, type = 4, fallen.leaves = FALSE, main = "Decision tree with CP =0.01 (Best CP)")
+dev.off()
+
+predicted.saleprice.prunned_dt <- predict(pruned_dtree, house.dt_test)
+
+r_squred.prunned<- postResample(pred = predicted.saleprice.prunned_dt*1000, obs = house.dt_test$SalePrice*1000)
+r_squred.prunned
+
+error_prunned <- (house.dt_test$SalePrice - predicted.saleprice.prunned_dt)*1000
+rmse.prunned <- sqrt(mean(error_prunned^2))
+
+rmse.prunned
+```
+
+###Decision tree with increased CP value
+```{r}
+dtree_3 <- prune(dtree, cp = 0.02) 
+
+png("PartC_Decisiontree_increaseCP.png", width = 800, height = 600)
+rpart.plot(dtree_3, type = 4, fallen.leaves = FALSE, main = "Decision tree with CP =0.02")
+dev.off()
+
+predicted.saleprice.dt_3 <- predict(dtree_3, house.dt_test)
+
+r_squred.prunned_3<- postResample(pred = predicted.saleprice.dt_3*1000, obs = house.dt_test$SalePrice*1000)
+r_squred.prunned_3
+
+error_prunned_3 <- (house.dt_test$SalePrice - predicted.saleprice.dt_3)*1000
+rmse.prunned_3 <- sqrt(mean(error_prunned_3^2))
+
+rmse.prunned_3
+```
+
+###Decision tree with decreased CP value
+```{r}
+dtree_4 <- prune(dtree, cp = 0.001) 
+
+png("PartC_Decisiontree_decreseCP.png", width = 800, height = 600)
+rpart.plot(dtree_4, type = 4, fallen.leaves = FALSE, main = "Decision tree with CP =0.001")
+dev.off()
+
+predicted.saleprice.dt_4 <- predict(dtree_4, house.dt_test)
+summary(dtree_4)
+
+r_squred.prunned_4<- postResample(pred = predicted.saleprice.dt_4*1000, obs = house.dt_test$SalePrice*1000)
+r_squred.prunned_4
+
+error_prunned_4 <- house.dt_test$SalePrice - predicted.saleprice.dt_4
+rmse.prunned_4 <- sqrt(mean(error_prunned_4^2))
+
+rmse.prunned_4
+```
+
+###Table of evaluation metrics
+```{r}
+rmse_decisiontree <- c(rmse.dt,rmse.prunned,rmse.prunned_3,rmse.prunned_4)
+Decision_tree <- c('Original', 'CP = 0.01', 'CP=0.02', 'CP = 0.001')
+
+evaluation_metrics <- rbind(Decision_tree,rmse_decisiontree )
+
+View(evaluation_metrics)
